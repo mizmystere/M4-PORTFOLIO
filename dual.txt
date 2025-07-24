@@ -1,0 +1,107 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+#define SIZE 5
+#define OBSTACLE -1
+#define EMPTY 0
+#define PATH 1
+
+typedef struct {
+    int x, y;
+    float f;
+} Node;
+
+int grid[SIZE][SIZE] = {
+    {0, 0, 0, -1, 0},
+    {0, -1, 0, -1, 0},
+    {0, -1, 0, 0, 0},
+    {0, 0, 0, -1, 0},
+    {0, -1, 0, 0, 0}
+};
+
+float manhattan(int x1, int y1, int x2, int y2) {
+    return abs(x1 - x2) + abs(y1 - y2);
+}
+
+float diagonal(int x1, int y1, int x2, int y2) {
+    return fmax(abs(x1 - x2), abs(y1 - y2));
+}
+
+float dual_heuristic(int x1, int y1, int x2, int y2) {
+    return 0.5 * manhattan(x1, y1, x2, y2) + 0.5 * diagonal(x1, y1, x2, y2);
+}
+
+void print_grid(int path[SIZE][SIZE]) {
+    printf("\nGrid (1 = path, -1 = obstacle):\n");
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            printf("%2d ", path[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+int is_valid(int x, int y) {
+    return x >= 0 && y >= 0 && x < SIZE && y < SIZE && grid[x][y] != OBSTACLE;
+}
+
+void pathfind(int sx, int sy, int gx, int gy) {
+    int path[SIZE][SIZE];
+    for (int i = 0; i < SIZE; i++)
+        for (int j = 0; j < SIZE; j++)
+            path[i][j] = grid[i][j];
+
+    int x = sx, y = sy;
+
+    while (x != gx || y != gy) {
+        float minF = 9999;
+        int nx = x, ny = y;
+
+        int dirs[4][2] = {{0,1},{1,0},{0,-1},{-1,0}};
+        for (int d = 0; d < 4; d++) {
+            int dx = x + dirs[d][0];
+            int dy = y + dirs[d][1];
+
+            if (is_valid(dx, dy) && path[dx][dy] != PATH) {
+                float h = dual_heuristic(dx, dy, gx, gy);
+                if (h < minF) {
+                    minF = h;
+                    nx = dx;
+                    ny = dy;
+                }
+            }
+        }
+
+        if (x == nx && y == ny) {
+            printf("No path found!\n");
+            return;
+        }
+
+        x = nx;
+        y = ny;
+        if (x != gx || y != gy)
+            path[x][y] = PATH;
+    }
+
+    path[sx][sy] = 9; // Start
+    path[gx][gy] = 8; // Goal
+    print_grid(path);
+}
+
+int main() {
+    int sx, sy, gx, gy;
+
+    printf("Grid size is 5x5. Enter start coordinates (x y): ");
+    scanf("%d %d", &sx, &sy);
+    printf("Enter goal coordinates (x y): ");
+    scanf("%d %d", &gx, &gy);
+
+    if (!is_valid(sx, sy) || !is_valid(gx, gy)) {
+        printf("Invalid start or goal!\n");
+        return 1;
+    }
+
+    pathfind(sx, sy, gx, gy);
+    return 0;
+}
